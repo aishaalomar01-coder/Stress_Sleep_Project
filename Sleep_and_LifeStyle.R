@@ -20,10 +20,10 @@ data$sleep_duration <- as.numeric(data$sleep_duration)
 data$stress_level <- as.numeric(data$stress_level)
 data$age <- as.numeric(data$age)
 
-# Inspecting data structure
+# Looking at data structure
 str(data)
 
-# Exploratory summaries
+# Exploring gender column
 table(data$gender)
 
 hist(
@@ -53,7 +53,7 @@ data_clean <- data[
 
 nrow(data_clean)
 
-#Stat Summary
+#Statics Summary and What to See
 
 summary_stats <- data.frame(
   Mean_Sleep = mean(data_clean$sleep_duration),
@@ -90,7 +90,7 @@ abline(model_sleep_stress, lwd = 2)
 
 # Research question 2 (exploratory): age, sleep, and stress
 # How does age relate to sleep and stress?
-# Not a deep causal question—just exploring patterns.
+# Not a deep question just exploring patterns.
 summary(data_clean$age)
 
 par(mfrow = c(1, 2))
@@ -210,4 +210,5 @@ text(
   labels = paste("Mean =", round(means, 2)), 
   cex = 0.8 
 )
+
 
