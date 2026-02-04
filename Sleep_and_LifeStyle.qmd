@@ -1,0 +1,336 @@
+---
+title: "Sleep Health and Lifestyle Analysis"
+author: "Ayse Alomar"
+date: today
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## 
+
+## Abstract
+
+This project explores the relationship between sleep duration and stress levels using a health and lifestyle dataset with 374 participants. The main focus is on whether shorter sleep is associated with higher stress. In addition, age and sleep disorder status are explored as potential related factors. The analysis shows a negative correlation between sleep duration and stress, and higher stress levels among individuals reporting a sleep disorder.
+
+## Introduction
+
+Sleep plays an important role in both physical and mental health. Previous research suggests that insufficient sleep is linked to higher stress levels and reduced well-being. The goal of this project is to explore how sleep duration relates to stress using a real-world dataset.
+
+This project addresses the following questions:
+
+1.  **Main research question:**
+
+    Is sleep duration associated with stress levels?
+
+2.  **Exploratory questions:**
+
+    Is age related to sleep duration or stress levels?
+
+    Do individuals with sleep disorders report higher stress?
+
+## Methods
+
+### Dataset
+
+The open source dataset from Kaggle contains health and lifestyle information from **374 participants**, including:
+
+-   Sleep duration (hours)
+
+-   Stress level (scale from 1 to 10)
+
+-   Age (years)
+
+-   Gender
+
+-   Sleep disorder status (None, Insomnia, Sleep Apnea)
+
+## Loading the data and initial checks
+
+The dataset is loaded from a CSV file. Column names are standardized to lowercase and underscores to avoid issues with spacing and capitalization later.
+
+Variables used in the analysis are converted to appropriate types. Gender is treated as a factor, while sleep duration, stress level, and age are treated as numeric variables.
+
+```{r}
+#| label: load-data
+
+data <- read.csv(
+  "Sleep_health_and_lifestyle_dataset.csv",
+  stringsAsFactors = FALSE
+)
+
+names(data) <- tolower(gsub("[ .]", "_", names(data)))
+
+data$gender <- factor(data$gender)
+data$sleep_duration <- as.numeric(data$sleep_duration)
+data$stress_level <- as.numeric(data$stress_level)
+data$age <- as.numeric(data$age)
+```
+
+## Data Cleaning
+
+Some entries may fall outside realistic ranges or the expected scale. A small helper function replaces values outside a chosen range with `NA`. This keeps cleaning logic readable and avoids repeating the same checks.
+
+-   Sleep duration is restricted to 3–12 hours (values outside are treated as invalid)
+
+-   Stress level is restricted to 1–10 (based on the dataset scale)
+
+Rows are filtered to keep only complete cases for the variables used in the main questions.
+
+```{r}
+#| label: cleaning-function
+
+validate_range <- function(x, min_val, max_val) {
+  ifelse(is.na(x) | x < min_val | x > max_val, NA, x)
+}
+
+data$sleep_duration <- validate_range(data$sleep_duration, 3, 12)
+data$stress_level <- validate_range(data$stress_level, 1, 10)
+
+data_clean <- data[
+  complete.cases(
+    data[, c("sleep_duration", "stress_level", "gender", "age")]
+  ),
+]
+
+nrow(data_clean)
+```
+
+## 
+
+## Descriptive statistics
+
+In the cleaned dataset:
+
+-   Mean sleep duration: **`r round(mean(data_clean$sleep_duration), 2)` hours** (SD = `r round(sd(data_clean$sleep_duration), 2)`)
+
+-   Mean stress level: **`r round(mean(data_clean$stress_level), 2)`** (SD = `r round(sd(data_clean$stress_level), 2)`)
+
+-   Mean age: **`r round(mean(data_clean$age), 2)` years**
+
+-   **Plot explanation:** The histogram shows how sleep duration is distributed in the dataset. The highest bars indicate the most common sleep durations, and the overall spread gives an idea of typical variation. This plot is mainly used to check whether values look reasonable after cleaning.
+
+```{r}
+#| label: hist-sleep
+#| fig-cap: "Distribution of sleep duration in the cleaned dataset."
+
+hist(
+  data_clean$sleep_duration,
+  breaks = 10,
+  col = "lightgray",
+  border = "white",
+  main = "Sleep Duration Distribution",
+  xlab = "Hours of sleep"
+)
+```
+
+## Research question 1: Sleep duration and stress
+
+A Pearson correlation test shows a strong negative association between sleep duration and stress level:
+
+-   **r = −0.811**
+
+-   **95% CI:** **\[−0.843, −0.773\]**
+
+-   **p \< 2.2e−16**
+
+This suggests that higher reported sleep duration is associated with lower reported stress in this dataset.
+
+```{r}
+#| label: cor-sleep-stress
+
+cor_sleep_stress <- cor.test(
+  data_clean$sleep_duration,
+  data_clean$stress_level
+)
+
+cor_sleep_stress
+
+```
+
+**Plot explanation:** Each point represents one participant. Because many people share similar values, transparency is used so overlapping areas look darker. The regression line summarizes the overall direction of the relationship. A downward slope matches a negative correlation, meaning higher sleep duration is associated with lower stress in this dataset.
+
+```{r}
+#| label: plot-sleep-stress
+#| fig-cap: "Sleep duration vs. stress level (jittered points) with a fitted regression line."
+plot(
+  jitter(data_clean$sleep_duration, 0.1),
+  jitter(data_clean$stress_level, 0.2),
+  pch = 16,
+  col = rgb(0.2, 0.4, 0.8, 0.6),
+  xlab = "Sleep duration (hours)",
+  ylab = "Stress level (1–10)",
+  main = "Sleep duration and Stress Relationship"
+)
+
+model_sleep_stress <- lm(
+  stress_level ~ sleep_duration,
+  data = data_clean
+)
+abline(model_sleep_stress, lwd = 2)
+
+```
+
+## Research question 2: Age, sleep, and stress (exploratory)
+
+Age is explored as a background factor that might relate to both sleep and stress. The relationships here are treated as exploratory.
+
+### Correlation results
+
+-   Age vs sleep duration: **r = 0.345**, 95% CI **\[0.252, 0.431\]**, p = **7.117e−12**
+
+-   Age vs stress level: **r = −0.422**, 95% CI **\[−0.502, −0.335\]**, p \< **2.2e−16**
+
+In this dataset, older age is associated with slightly longer sleep duration and lower stress levels.
+
+```{r}
+#| label: cor-age
+cor_age_sleep <- cor.test(
+  data_clean$age,
+  data_clean$sleep_duration
+)
+
+cor_age_stress <- cor.test(
+  data_clean$age,
+  data_clean$stress_level
+)
+
+cor_age_sleep
+cor_age_stress
+
+```
+
+**Plot explanation:** These plots show whether age is linked to sleep duration and stress. The regression lines help summarize the overall trend, while transparency makes it easier to see where many points overlap. Since this section is exploratory, the plots are mainly used for pattern-checking and context.
+
+```{r}
+#| label: plot-age
+#| fig-cap: "Age vs sleep duration and age vs stress level, with fitted regression lines."
+par(mfrow = c(1, 2))
+
+plot(
+  jitter(data_clean$age, 0.5),
+  jitter(data_clean$sleep_duration, 0.1),
+  pch = 16,
+  col = rgb(0.2, 0.5, 0.8, 0.6),
+  xlab = "Age (years)",
+  ylab = "Sleep duration (hours)",
+  main = "Age and Sleep Duration"
+)
+abline(lm(sleep_duration ~ age, data = data_clean), lwd = 2)
+
+plot(
+  jitter(data_clean$age, 0.5),
+  jitter(data_clean$stress_level, 0.2),
+  pch = 16,
+  col = rgb(0.9, 0.4, 0.3, 0.6),
+  xlab = "Age (years)",
+  ylab = "Stress level (1–10)",
+  main = "Age and Stress Level"
+)
+abline(lm(stress_level ~ age, data = data_clean), lwd = 2)
+
+par(mfrow = c(1, 1))
+
+```
+
+## Sleep disorders and stress levels
+
+A binary sleep disorder variable is created:
+
+-   **None**: 219
+
+-   **Sleep Disorder**: 155
+
+All non-"None" categories are grouped together for a simpler comparison and clearer group sizes.
+
+```{r}
+#| label: disorder
+data_clean$sleep_disorder_bin <- ifelse(
+  data_clean$sleep_disorder == "None",
+  "None",
+  "Sleep Disorder"
+)
+data_clean$sleep_disorder_bin <- as.factor(data_clean$sleep_disorder_bin)
+
+table(data_clean$sleep_disorder_bin)
+
+```
+
+### T-test result and group means
+
+A Welch two-sample t-test compares stress levels between groups:
+
+-   Mean stress (None): **5.114**
+
+-   Mean stress (Sleep Disorder): **5.768**
+
+-   p-value: **0.0006583**
+
+-   95% CI for difference (None − Sleep Disorder): **\[−1.027, −0.280\]**
+
+This supports a difference in average stress levels between the two groups in this dataset.
+
+**Plot explanation:** The bar plot compares average stress between the two groups. Error bars show standard deviation, which gives a rough sense of within-group spread. If the sleep disorder bar is higher, it indicates higher average stress for that group in this dataset.
+
+```{r}
+#| label: ttest
+t.test(
+  stress_level ~ sleep_disorder_bin,
+  data = data_clean
+)
+#| label: barplot
+#| fig-cap: "Mean stress level by sleep disorder group (error bars show standard deviation)."
+means <- tapply(
+  data_clean$stress_level,
+  data_clean$sleep_disorder_bin,
+  mean,
+  na.rm = TRUE
+)
+
+sds <- tapply(
+  data_clean$stress_level,
+  data_clean$sleep_disorder_bin,
+  sd,
+  na.rm = TRUE
+)
+
+bp <- barplot(
+  means,
+  ylim = c(0, max(means + sds) + 1),
+  col = c("lightblue", "steelblue"),
+  ylab = "Stress Level",
+  main = "Stress Level by Sleep Disorder"
+)
+
+arrows(
+  bp, means - sds,
+  bp, means + sds,
+  angle = 90,
+  code = 3,
+  length = 0.1
+)
+
+text(
+  x = bp,
+  y = means + sds + 0.5,
+  labels = paste("Mean =", round(means, 2)), 
+  cex = 0.8  
+)
+
+```
+
+The dataset shows a strong negative association between sleep duration and stress level (**r = −0.811**), supported by both the correlation test and the downward trend in the scatterplot regression line. Age also shows moderate associations with sleep duration (**r = 0.345**) and stress (**r = −0.422**) in this dataset, although this section is exploratory.
+
+Stress levels differ between participants with no reported sleep disorder and those with a reported sleep disorder. The sleep disorder group has higher average stress (Welch t-test, **p = 0.0006583**).
+
+### **Limitations**
+
+-   Cross-sectional design limits causal inference.
+
+-   Self-reported data may contain measurement bias.
+
+-   Sample may not be representative of broader population.
+
+**Code Repository:** https://github.com/aishaalomar01-coder/Stress_Sleep_Project.git
