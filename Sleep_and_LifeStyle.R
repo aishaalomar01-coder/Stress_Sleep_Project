@@ -1,11 +1,11 @@
 library(stats)
 library(graphics)
 
-# Sleep health and lifestyle analysis
-# I’m mostly interested in whether sleep duration is linked to stress level.
-# The dataset has other variables, but I’m keeping the analysis focused so I can explain it well in the oral exam.
+#Sleep health and lifestyle analysis
+#I’m mostly interested in whether sleep duration is linked to stress level.
+#The dataset has other variables, but I’m keeping the analysis focused so I can explain it well in the oral exam.
 
-# Loading data
+#Loading data
 file_path <- "Sleep_health_and_lifestyle_dataset.csv"
 
 if (!file.exists(file_path)) {
@@ -15,7 +15,7 @@ if (!file.exists(file_path)) {
 
 data <- read.csv(file_path, stringsAsFactors = FALSE)
 
-# Standardising column names
+#Standardising column names
 names(data) <- tolower(gsub("[ .]", "_", names(data)))
 
 # Changing variables to its appropriate types
@@ -24,10 +24,10 @@ data$sleep_duration <- as.numeric(data$sleep_duration)
 data$stress_level <- as.numeric(data$stress_level)
 data$age <- as.numeric(data$age)
 
-# Quick check at data structure
+#Quick check at data structure
 str(data)
 
-# Exploring gender column
+#Exploring the gender column
 table(data$gender)
 
 hist(
@@ -39,7 +39,7 @@ hist(
   xlab = "Hours of sleep"
 )
 
-# Data cleaning
+#Data cleaning
 validate_range <- function(x, min_val, max_val) {
   ifelse(is.na(x) | x < min_val | x > max_val, NA, x)
 }
@@ -47,7 +47,7 @@ validate_range <- function(x, min_val, max_val) {
 data$sleep_duration <- validate_range(data$sleep_duration, 3, 12)
 data$stress_level <- validate_range(data$stress_level, 1, 10)
 
-# Keeping rows that are complete for the variables I use in the main questions
+#Keeping rows that are complete for the variables I use in the main questions to make it easier
 
 data_clean <- data[
   complete.cases(
@@ -57,7 +57,7 @@ data_clean <- data[
 
 nrow(data_clean)
 
-# Summary and what can we observe 
+#Summary and what is observed 
 
 summary_stats <- data.frame(
   Mean_Sleep = mean(data_clean$sleep_duration),
@@ -68,7 +68,7 @@ summary_stats <- data.frame(
 )
 
 summary_stats
-# Research question 1: the relationship between sleep duration and stress
+#Research question 1: the relationship between sleep duration and stress
 cor_sleep_stress <- cor.test(
   data_clean$sleep_duration,
   data_clean$stress_level
@@ -89,9 +89,9 @@ plot(
 
 abline(lm(stress_level ~ sleep_duration, data = data_clean), lwd = 2)
 
-# Research question 2 (exploratory): age, sleep, and stress
-# How does age relate to sleep and stress?
-# Not a deep question just exploring patterns.
+#Research question 2: age, sleep, and stress (how do they interact?)
+#How does age relate to sleep and stress?
+#Not a deep question just exploring patterns.
 summary(data_clean$age)
 
 par(mfrow = c(1, 2))
@@ -160,10 +160,10 @@ abline(lm(stress_level ~ age, data = data_clean), lwd = 2)
 par(mfrow = c(1, 1))
 
 
-# Sleep disorder (binary)
-# This is a quick comparison 
-# do people with any reported sleep disorder show higher stress?
-# I’m grouping not "None" together so the groups are bigger and easier to compare.
+#Sleep disorder. This is a quick comparison!
+#Do people with any reported sleep disorder show higher stress?
+#I’m grouping not "None" together so the groups are bigger and easier to compare.
+
 data_clean$sleep_disorder_bin <- ifelse(
   data_clean$sleep_disorder == "None",
   "None",
@@ -171,16 +171,16 @@ data_clean$sleep_disorder_bin <- ifelse(
 )
 data_clean$sleep_disorder_bin <- as.factor(data_clean$sleep_disorder_bin)
 
-# Group sizes
+#Group sizes
 table(data_clean$sleep_disorder_bin)
 
-# T-test: stress level by sleep disorder
+#T-test: stress level by sleep disorder
 t.test(
   stress_level ~ sleep_disorder_bin,
   data = data_clean
 )
 
-# Mean and SD
+#Mean and SD
 means <- tapply(
   data_clean$stress_level,
   data_clean$sleep_disorder_bin,
@@ -195,7 +195,7 @@ sds <- tapply(
   na.rm = TRUE
 )
 
-# Bar plot Means and SD
+#Bar plot with Means and SD
 bp <- barplot(
   means,
   ylim = c(0, max(means + sds) + 1),
@@ -218,4 +218,5 @@ text(
   labels = paste("Mean =", round(means, 2)),
   cex = 0.8
 )
+
 
