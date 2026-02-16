@@ -1,5 +1,3 @@
----
-title: "Sleep Health and Lifestyle Analysis"
 author: "Ayse Alomar"
 date: today
 format:
@@ -56,10 +54,14 @@ Variables used in the analysis are converted to appropriate types. Gender is tre
 ```{r}
 #| label: load-data
 
-data <- read.csv(
-  "Sleep_health_and_lifestyle_dataset.csv",
-  stringsAsFactors = FALSE
-)
+file_path <- "Sleep_health_and_lifestyle_dataset.csv"
+
+if (!file.exists(file_path)) {
+  stop("CSV file not found: ", file_path,
+       "Put it in the folder of .R/.qmd files or change the file_path.")
+}
+
+data <- read.csv(file_path, stringsAsFactors = FALSE)
 
 names(data) <- tolower(gsub("[ .]", "_", names(data)))
 
@@ -154,22 +156,20 @@ cor_sleep_stress
 
 ```{r}
 #| label: plot-sleep-stress
-#| fig-cap: "Sleep duration vs. stress level (jittered points) with a fitted regression line."
+#| fig-cap: "Sleep duration vs. stress level with a fitted regression line."
+
 plot(
-  jitter(data_clean$sleep_duration, 0.1),
-  jitter(data_clean$stress_level, 0.2),
+  data_clean$sleep_duration,
+  data_clean$stress_level,
   pch = 16,
-  col = rgb(0.2, 0.4, 0.8, 0.6),
+  cex = 0.7,
+  col = "blue",
   xlab = "Sleep duration (hours)",
   ylab = "Stress level (1–10)",
-  main = "Sleep duration and Stress Relationship"
+  main = "Sleep Duration and Stress"
 )
 
-model_sleep_stress <- lm(
-  stress_level ~ sleep_duration,
-  data = data_clean
-)
-abline(model_sleep_stress, lwd = 2)
+abline(lm(stress_level ~ sleep_duration, data = data_clean), lwd = 2)
 
 ```
 
@@ -210,26 +210,31 @@ cor_age_stress
 par(mfrow = c(1, 2))
 
 plot(
-  jitter(data_clean$age, 0.5),
-  jitter(data_clean$sleep_duration, 0.1),
+  data_clean$age,
+  data_clean$sleep_duration,
   pch = 16,
-  col = rgb(0.2, 0.5, 0.8, 0.6),
+  cex = 0.7,
+  col = "blue",
   xlab = "Age (years)",
   ylab = "Sleep duration (hours)",
-  main = "Age and Sleep Duration"
+  main = "Age and Sleep Duration Relationship"
 )
+
 abline(lm(sleep_duration ~ age, data = data_clean), lwd = 2)
 
 plot(
-  jitter(data_clean$age, 0.5),
-  jitter(data_clean$stress_level, 0.2),
+  data_clean$age,
+  data_clean$stress_level,
   pch = 16,
-  col = rgb(0.9, 0.4, 0.3, 0.6),
+  cex = 0.7,
+  col = "red",
   xlab = "Age (years)",
   ylab = "Stress level (1–10)",
-  main = "Age and Stress Level"
+  main = "Age and Stress Level Relationship"
 )
+
 abline(lm(stress_level ~ age, data = data_clean), lwd = 2)
+
 
 par(mfrow = c(1, 1))
 
@@ -280,8 +285,8 @@ t.test(
   stress_level ~ sleep_disorder_bin,
   data = data_clean
 )
-#| label: barplot
-#| fig-cap: "Mean stress level by sleep disorder group (error bars show standard deviation)."
+
+# Mean and SD
 means <- tapply(
   data_clean$stress_level,
   data_clean$sleep_disorder_bin,
@@ -296,12 +301,13 @@ sds <- tapply(
   na.rm = TRUE
 )
 
+# Bar plot Means and SD
 bp <- barplot(
   means,
   ylim = c(0, max(means + sds) + 1),
   col = c("lightblue", "steelblue"),
-  ylab = "Stress Level",
-  main = "Stress Level by Sleep Disorder"
+  ylab = "Stress level",
+  main = "Stress level by Sleep Disorder"
 )
 
 arrows(
@@ -315,10 +321,9 @@ arrows(
 text(
   x = bp,
   y = means + sds + 0.5,
-  labels = paste("Mean =", round(means, 2)), 
-  cex = 0.8  
+  labels = paste("Mean =", round(means, 2)),
+  cex = 0.8
 )
-
 ```
 
 The dataset shows a strong negative association between sleep duration and stress level (**r = −0.811**), supported by both the correlation test and the downward trend in the scatterplot regression line. Age also shows moderate associations with sleep duration (**r = 0.345**) and stress (**r = −0.422**) in this dataset, although this section is exploratory.
