@@ -18,20 +18,22 @@ data <- read.csv(file_path, stringsAsFactors = FALSE)
 #Standardising column names
 names(data) <- tolower(gsub("[ .]", "_", names(data)))
 
-# Changing variables to its appropriate types
+
+#check the data structure
+str(data)
+
+#Changing variables to its appropriate types
 data$gender <- factor(data$gender)
 data$sleep_duration <- as.numeric(data$sleep_duration)
 data$stress_level <- as.numeric(data$stress_level)
 data$age <- as.numeric(data$age)
 
-#Quick check at data structure
-str(data)
 
 #Exploring the gender column
 table(data$gender)
 
 hist(
-  clean_data$sleep_duration,
+  data$sleep_duration,
   breaks = 10,
   col = "lightgray",
   border = "white",
@@ -218,6 +220,7 @@ text(
   labels = paste("Mean =", round(means, 2)),
   cex = 0.8
 )
+
 
 
 
