@@ -31,7 +31,7 @@ str(data)
 table(data$gender)
 
 hist(
-  data_clean$sleep_duration,
+  clean_data$sleep_duration,
   breaks = 10,
   col = "lightgray",
   border = "white",
@@ -40,45 +40,45 @@ hist(
 )
 
 #Data cleaning
-validate_range <- function(x, min_val, max_val) {
+validate <- function(x, min_val, max_val) {
   ifelse(is.na(x) | x < min_val | x > max_val, NA, x)
 }
 
-data$sleep_duration <- validate_range(data$sleep_duration, 3, 12)
-data$stress_level <- validate_range(data$stress_level, 1, 10)
+data$sleep_duration <- validate(data$sleep_duration, 3, 12)
+data$stress_level <- validate(data$stress_level, 1, 10)
 
 #Keeping rows that are complete for the variables I use in the main questions to make it easier
 
-data_clean <- data[
+clean_data <- data[
   complete.cases(
     data[, c("sleep_duration", "stress_level", "gender", "age")]
   ),
 ]
 
-nrow(data_clean)
+nrow(clean_data)
 
 #Summary and what is observed 
 
-summary_stats <- data.frame(
-  Mean_Sleep = mean(data_clean$sleep_duration),
-  Sd_Sleep   = sd(data_clean$sleep_duration),
-  Mean_Stress = mean(data_clean$stress_level),
-  SD_Stress   = sd(data_clean$stress_level),
-  Mean_Age   = mean(data_clean$age)
+summarystats <- data.frame(
+  Mean_Sleep = mean(clean_data$sleep_duration),
+  Sd_Sleep   = sd(clean_data$sleep_duration),
+  Mean_Stress = mean(clean_data$stress_level),
+  SD_Stress   = sd(clean_data$stress_level),
+  Mean_Age   = mean(clean_data$age)
 )
 
-summary_stats
+summarystats
 #Research question 1: the relationship between sleep duration and stress
 cor_sleep_stress <- cor.test(
-  data_clean$sleep_duration,
-  data_clean$stress_level
+  clean_data$sleep_duration,
+  clean_data$stress_level
 )
 
-cor_sleep_stress #correlation
+cor_sleep_stress #correlation of sleep and stress
 
 plot(
-  data_clean$sleep_duration,
-  data_clean$stress_level,
+  clean_data$sleep_duration,
+  clean_data$stress_level,
   pch = 16,
   cex = 0.7,
   col = "blue",
@@ -87,17 +87,17 @@ plot(
   main = "Sleep Duration and Stress"
 )
 
-abline(lm(stress_level ~ sleep_duration, data = data_clean), lwd = 2)
+abline(lm(stress_level ~ sleep_duration, data = clean_data), lwd = 2)
 
 #Research question 2: age, sleep, and stress (how do they interact?)
 #How does age relate to sleep and stress?
 #Not a deep question just exploring patterns.
-summary(data_clean$age)
+summary(clean_data$age)
 
 par(mfrow = c(1, 2))
 
 hist(
-  data_clean$age,
+  clean_data$age,
   breaks = 20,
   col = "lightgray",
   main = "Age distribution",
@@ -105,7 +105,7 @@ hist(
 )
 
 hist(
-  data_clean$stress_level,
+  clean_data$stress_level,
   breaks = 10,
   col = "lightgray",
   main = "Stress level distribution",
@@ -114,24 +114,24 @@ hist(
 
 par(mfrow = c(1, 1))
 
-cor_age_sleep <- cor.test(
-  data_clean$age,
-  data_clean$sleep_duration
+corage_sleep <- cor.test(
+  clean_data$age,
+  clean_data$sleep_duration
 )
 
-cor_age_stress <- cor.test(
-  data_clean$age,
-  data_clean$stress_level
+corage_stress <- cor.test(
+  clean_data$age,
+  clean_data$stress_level
 )
 
-cor_age_sleep
-cor_age_stress
+corage_sleep #correlation of age and sleep
+corage_stress #correlation of age and stress
 
 par(mfrow = c(1, 2))
 
 plot(
-  data_clean$age,
-  data_clean$sleep_duration,
+  clean_data$age,
+  clean_data$sleep_duration,
   pch = 16,
   cex = 0.7,
   col = "blue",
@@ -140,12 +140,12 @@ plot(
   main = "Age and Sleep Duration Relationship"
 )
 
-abline(lm(sleep_duration ~ age, data = data_clean), lwd = 2)
+abline(lm(sleep_duration ~ age, data = clean_data), lwd = 2)
  
 
 plot(
-  data_clean$age,
-  data_clean$stress_level,
+  clean_data$age,
+  clean_data$stress_level,
   pch = 16,
   cex = 0.7,
   col = "red",
@@ -154,7 +154,7 @@ plot(
   main = "Age and Stress Level Relationship"
 )
 
-abline(lm(stress_level ~ age, data = data_clean), lwd = 2)
+abline(lm(stress_level ~ age, data = clean_data), lwd = 2)
 
 
 par(mfrow = c(1, 1))
@@ -164,39 +164,39 @@ par(mfrow = c(1, 1))
 #Do people with any reported sleep disorder show higher stress?
 #I’m grouping not "None" together so the groups are bigger and easier to compare.
 
-data_clean$sleep_disorder_bin <- ifelse(
-  data_clean$sleep_disorder == "None",
+clean_data$sleep_disorder_bin <- ifelse(
+  clean_data$sleep_disorder == "None",
   "None",
   "Sleep Disorder"
 )
-data_clean$sleep_disorder_bin <- as.factor(data_clean$sleep_disorder_bin)
+clean_data$sleep_disorder_bin <- as.factor(clean_data$sleep_disorder_bin)
 
 #Group sizes
-table(data_clean$sleep_disorder_bin)
+table(clean_data$sleep_disorder_bin)
 
 #T-test: stress level by sleep disorder
 t.test(
   stress_level ~ sleep_disorder_bin,
-  data = data_clean
+  data = clean_data
 )
 
 #Mean and SD
 means <- tapply(
-  data_clean$stress_level,
-  data_clean$sleep_disorder_bin,
+  clean_data$stress_level,
+  clean_data$sleep_disorder_bin,
   mean,
   na.rm = TRUE
 )
 
 sds <- tapply(
-  data_clean$stress_level,
-  data_clean$sleep_disorder_bin,
+  clean_data$stress_level,
+  clean_data$sleep_disorder_bin,
   sd,
   na.rm = TRUE
 )
 
 #Bar plot with Means and SD
-bp <- barplot(
+bar <- barplot(
   means,
   ylim = c(0, max(means + sds) + 1),
   col = c("lightblue", "steelblue"),
@@ -205,18 +205,19 @@ bp <- barplot(
 )
 
 arrows(
-  bp, means - sds,
-  bp, means + sds,
+  bar, means - sds,
+  bar, means + sds,
   angle = 90,
   code = 3,
   length = 0.1
 )
 
 text(
-  x = bp,
+  x = bar,
   y = means + sds + 0.5,
   labels = paste("Mean =", round(means, 2)),
   cex = 0.8
 )
+
 
 
