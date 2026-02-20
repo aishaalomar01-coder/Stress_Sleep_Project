@@ -84,20 +84,20 @@ Rows are filtered to keep only complete cases for the variables used in the main
 ```{r}
 #| label: cleaning-function
 
-validate_range <- function(x, min_val, max_val) {
+validate <- function(x, min_val, max_val) {
   ifelse(is.na(x) | x < min_val | x > max_val, NA, x)
 }
 
-data$sleep_duration <- validate_range(data$sleep_duration, 3, 12)
-data$stress_level <- validate_range(data$stress_level, 1, 10)
+data$sleep_duration <- validate(data$sleep_duration, 3, 12)
+data$stress_level <- validate(data$stress_level, 1, 10)
 
-data_clean <- data[
+clean_data <- data[
   complete.cases(
     data[, c("sleep_duration", "stress_level", "gender", "age")]
   ),
 ]
 
-nrow(data_clean)
+nrow(clean_data)
 ```
 
 ## 
@@ -106,11 +106,11 @@ nrow(data_clean)
 
 In the cleaned dataset:
 
--   Mean sleep duration: **`r round(mean(data_clean$sleep_duration), 2)` hours** (SD = `r round(sd(data_clean$sleep_duration), 2)`)
+-   Mean sleep duration: **`r round(mean(clean_data$sleep_duration), 2)` hours** (SD = `r round(sd(clean_data$sleep_duration), 2)`)
 
--   Mean stress level: **`r round(mean(data_clean$stress_level), 2)`** (SD = `r round(sd(data_clean$stress_level), 2)`)
+-   Mean stress level: **`r round(mean(clean_data$stress_level), 2)`** (SD = `r round(sd(clean_data$stress_level), 2)`)
 
--   Mean age: **`r round(mean(data_clean$age), 2)` years**
+-   Mean age: **`r round(mean(clean_data$age), 2)` years**
 
 -   **Plot explanation:** The histogram shows how sleep duration is distributed in the dataset. The highest bars indicate the most common sleep durations, and the overall spread gives an idea of typical variation. This plot is mainly used to check whether values look reasonable after cleaning.
 
@@ -119,7 +119,7 @@ In the cleaned dataset:
 #| fig-cap: "Distribution of sleep duration in the cleaned dataset."
 
 hist(
-  data_clean$sleep_duration,
+  clean_data$sleep_duration,
   breaks = 10,
   col = "lightgray",
   border = "white",
@@ -144,8 +144,8 @@ This suggests that higher reported sleep duration is associated with lower repor
 #| label: cor-sleep-stress
 
 cor_sleep_stress <- cor.test(
-  data_clean$sleep_duration,
-  data_clean$stress_level
+  clean_data$sleep_duration,
+  clean_data$stress_level
 )
 
 cor_sleep_stress
@@ -159,8 +159,8 @@ cor_sleep_stress
 #| fig-cap: "Sleep duration vs. stress level with a fitted regression line."
 
 plot(
-  data_clean$sleep_duration,
-  data_clean$stress_level,
+  clean_data$sleep_duration,
+  clean_data$stress_level,
   pch = 16,
   cex = 0.7,
   col = "blue",
@@ -169,7 +169,7 @@ plot(
   main = "Sleep Duration and Stress"
 )
 
-abline(lm(stress_level ~ sleep_duration, data = data_clean), lwd = 2)
+abline(lm(stress_level ~ sleep_duration, data = clean_data), lwd = 2)
 
 ```
 
@@ -188,13 +188,13 @@ In this dataset, older age is associated with slightly longer sleep duration and
 ```{r}
 #| label: cor-age
 cor_age_sleep <- cor.test(
-  data_clean$age,
-  data_clean$sleep_duration
+  clean_data$age,
+  clean_data$sleep_duration
 )
 
 cor_age_stress <- cor.test(
-  data_clean$age,
-  data_clean$stress_level
+  clean_data$age,
+  clean_data$stress_level
 )
 
 cor_age_sleep
@@ -210,8 +210,8 @@ cor_age_stress
 par(mfrow = c(1, 2))
 
 plot(
-  data_clean$age,
-  data_clean$sleep_duration,
+  clean_data$age,
+  clean_data$sleep_duration,
   pch = 16,
   cex = 0.7,
   col = "blue",
@@ -220,11 +220,11 @@ plot(
   main = "Age and Sleep Duration Relationship"
 )
 
-abline(lm(sleep_duration ~ age, data = data_clean), lwd = 2)
+abline(lm(sleep_duration ~ age, data = clean_data), lwd = 2)
 
 plot(
-  data_clean$age,
-  data_clean$stress_level,
+  clean_data$age,
+  clean_data$stress_level,
   pch = 16,
   cex = 0.7,
   col = "red",
@@ -233,7 +233,7 @@ plot(
   main = "Age and Stress Level Relationship"
 )
 
-abline(lm(stress_level ~ age, data = data_clean), lwd = 2)
+abline(lm(stress_level ~ age, data = clean_data), lwd = 2)
 
 
 par(mfrow = c(1, 1))
@@ -252,14 +252,14 @@ All non-"None" categories are grouped together for a simpler comparison and clea
 
 ```{r}
 #| label: disorder
-data_clean$sleep_disorder_bin <- ifelse(
-  data_clean$sleep_disorder == "None",
+clean_data$sleep_disorder_bin <- ifelse(
+  clean_data$sleep_disorder == "None",
   "None",
   "Sleep Disorder"
 )
-data_clean$sleep_disorder_bin <- as.factor(data_clean$sleep_disorder_bin)
+clean_data$sleep_disorder_bin <- as.factor(clean_data$sleep_disorder_bin)
 
-table(data_clean$sleep_disorder_bin)
+table(clean_data$sleep_disorder_bin)
 
 ```
 
@@ -283,26 +283,26 @@ This supports a difference in average stress levels between the two groups in th
 #| label: ttest
 t.test(
   stress_level ~ sleep_disorder_bin,
-  data = data_clean
+  data = clean_data
 )
 
 # Mean and SD
 means <- tapply(
-  data_clean$stress_level,
-  data_clean$sleep_disorder_bin,
+  clean_data$stress_level,
+  clean_data$sleep_disorder_bin,
   mean,
   na.rm = TRUE
 )
 
 sds <- tapply(
-  data_clean$stress_level,
-  data_clean$sleep_disorder_bin,
+  clean_data$stress_level,
+  clean_data$sleep_disorder_bin,
   sd,
   na.rm = TRUE
 )
 
 # Bar plot Means and SD
-bp <- barplot(
+bar <- barplot(
   means,
   ylim = c(0, max(means + sds) + 1),
   col = c("lightblue", "steelblue"),
@@ -311,15 +311,15 @@ bp <- barplot(
 )
 
 arrows(
-  bp, means - sds,
-  bp, means + sds,
+  bar, means - sds,
+  bar, means + sds,
   angle = 90,
   code = 3,
   length = 0.1
 )
 
 text(
-  x = bp,
+  x = bar,
   y = means + sds + 0.5,
   labels = paste("Mean =", round(means, 2)),
   cex = 0.8
@@ -344,6 +344,7 @@ Stress levels differ between participants with no reported sleep disorder and th
 The data was taken from Kaggle, Sleep Health and Lifestyle Dataset: https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
 
 **Code Repository:** https://github.com/aishaalomar01-coder/Stress_Sleep_Project.git
+
 
 
 
