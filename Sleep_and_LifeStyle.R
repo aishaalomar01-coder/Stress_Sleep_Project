@@ -203,6 +203,7 @@ bar <- barplot(
   ylim = c(0, max(means + sds) + 1),
   col = c("lightblue", "steelblue"),
   ylab = "Stress level",
+  xlab = "Sleep Disorder",
   main = "Stress level by Sleep Disorder"
 )
 
@@ -220,6 +221,7 @@ text(
   labels = paste("Mean =", round(means, 2)),
   cex = 0.8
 )
+
 
 
 
