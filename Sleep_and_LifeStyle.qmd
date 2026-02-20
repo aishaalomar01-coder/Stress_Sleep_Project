@@ -11,7 +11,7 @@ format:
 
 ## Abstract
 
-This project explores the relationship between sleep duration and stress levels using a health and lifestyle dataset with 374 participants. The main focus is on whether shorter sleep is associated with higher stress. In addition, age and sleep disorder status are explored as potential related factors. The analysis shows a negative correlation between sleep duration and stress, and higher stress levels among individuals reporting a sleep disorder.
+This project explores the relationship between sleep duration and stress levels using a health and lifestyle dataset from Kaggle with 374 participants. The main focus is on whether shorter sleep is associated with higher stress. In addition, age and sleep disorder status are explored as potential related factors. The analysis shows a negative correlation between sleep duration and stress, and higher stress levels among individuals reporting a sleep disorder.
 
 ## Introduction
 
@@ -338,4 +338,12 @@ Stress levels differ between participants with no reported sleep disorder and th
 
 -   Sample may not be representative of broader population.
 
+
+### **References**
+
+The data was taken from Kaggle, Sleep Health and Lifestyle Dataset: https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
+
 **Code Repository:** https://github.com/aishaalomar01-coder/Stress_Sleep_Project.git
+
+
+
