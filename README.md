@@ -1,6 +1,6 @@
 # Stress & Sleep Analysis
 
-This project analyzes the relationship between sleep duration and stress levels
+This project analyzes the relationship between sleep duration, stress levels, age, and sleep disorders
 using the Sleep Health and Lifestyle dataset from Kaggle.
 
 ## Files
