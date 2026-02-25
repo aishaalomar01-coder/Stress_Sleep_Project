@@ -1,0 +1,378 @@
+---
+title: "Sleep Health and Lifestyle Analysis"
+author: "Ayse Alomar"
+date: today
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    code-summary: "Show code"
+---
+
+## 
+
+## Abstract
+
+This project explores the relationship between sleep duration and stress levels using a health and lifestyle dataset with 374 participants. The main focus is on whether shorter sleep is associated with higher stress. In addition, age and sleep disorder variables are explored as potential related factors. The analysis shows a negative correlation between sleep duration and stress, and higher stress levels among individuals reporting a sleep disorder.
+
+## Introduction
+
+Sleep plays an important role in both physical and mental health. Previous research suggests that insufficient sleep is linked to higher stress levels and reduced well-being. The goal of this project is to explore how sleep duration relates to stress using a real-world dataset from a Kaggle open source dataset. I explore whether that pattern appears in these data and how age and sleep disorder relate to sleep and stress.
+
+Dataset source (Kaggle): https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
+
+
+This project addresses the following questions:
+
+- Is sleep duration associated with stress levels?
+- Is age related to sleep duration or stress levels?
+- Do individuals with sleep disorders report higher stress?
+- Do individuals with sleep disorders report less sleeping hours?
+
+## Methods
+
+### Dataset
+
+The open source dataset from Kaggle contains health and lifestyle information from **374 participants**, including:
+
+-   Sleep duration (hours)
+
+-   Stress level (scale from 1 to 10)
+
+-   Age (years)
+
+-   Gender
+
+-   Sleep disorder status (None, Insomnia, Sleep Apnea)
+
+## Loading the data and initial checks
+
+The dataset is loaded from a CSV file. The dataset object is called "sleep_kaggle_data" (before cleaning). Column names are standardized to lowercase and underscores to avoid issues with spacing and capitalization later while working on the analysis.
+
+Variables used in the analysis are converted to appropriate types. Gender is treated as a factor, while sleep duration, stress level, and age are treated as numeric variables. I include gender because I want to check if there is any bias towards a specific gender in the results. 
+
+```{r}
+#| label: load the data
+
+file_path <- "Sleep_health_and_lifestyle_dataset.csv"
+
+if (!file.exists(file_path)) {
+  stop("CSV file not found: ", file_path,
+       "Put it in the folder of .R/.qmd files or change the file_path.")
+}
+
+sleep_kaggle_data <- read.csv(file_path, stringsAsFactors = FALSE)
+
+#Standardising column names
+names(sleep_kaggle_data) <- tolower(gsub("[ .]", "_", names(sleep_kaggle_data)))
+
+
+#check for the data structure
+str(sleep_kaggle_data)
+
+#Changing the variables I will use to its appropriate types
+
+sleep_kaggle_data$gender <- as.factor(sleep_kaggle_data$gender)
+
+table(sleep_kaggle_data$gender)
+```
+
+## Data Cleaning
+
+Some values may fall outside realistic ranges or the expected scale. A small helper function replaces values outside a chosen range with `NA`. This keeps the data readable and avoids repeating the same checks.
+
+-   Sleep duration is restricted to 3–12 hours (values outside are treated as invalid and replaced with NA)
+
+-   Stress level is restricted to 1–10 (based on the dataset scale)
+
+Rows are filtered to keep only complete cases for the variables used in the main questions. The two objects "after_sleep" and "after_stress" are there to check how many NAs were dropped. 
+
+The validate range function check did not replace any values (sleep duration: 0, stress level: 0).
+After filtering to complete cases for the analysis variables, 374 rows remained (so 0 rows were dropped). It was just a check for NAs and invalid inputs. I still use the object "clean_sleep_data" (dataset after cleaning) later in the functions and analysis to make sure everything is working fine and there are no NAs.
+
+```{r}
+#| label: cleaning function
+
+validate_range <- function(x, min_val, max_val) {
+  bad <- !is.na(x) & (x < min_val | x > max_val)
+  x[bad] <- NA
+  list(x = x, n_replaced = sum(bad))
+}
+
+after_sleep <- validate_range(sleep_kaggle_data$sleep_duration, 3, 12)
+sleep_kaggle_data$sleep_duration <- after_sleep$x
+message("Sleep_duration values set to NA:", after_sleep$n_replaced)
+
+after_stress <- validate_range(sleep_kaggle_data$stress_level, 1, 10)
+sleep_kaggle_data$stress_level <- after_stress$x
+message("Stress_level values set to NA:", after_stress$n_replaced)
+
+#no values fell off but just to make sure:
+
+clean_sleep_data <- sleep_kaggle_data[
+  complete.cases(sleep_kaggle_data[, c("sleep_duration", "stress_level", "gender", "age", "sleep_disorder")]),
+]
+
+```
+
+## 
+
+## Descriptive statistics
+
+In the cleaned dataset:
+
+-   Mean sleep duration:**`r round(mean(clean_sleep_data$sleep_duration), 2)`hours**(SD =`r round(sd(clean_sleep_data$sleep_duration), 2)`)
+
+-   Mean stress level:**`r round(mean(clean_sleep_data$stress_level), 2)`**(SD =`r round(sd(clean_sleep_data$stress_level), 2)`)
+
+-   Mean age:**`r round(mean(clean_sleep_data$age), 2)`years**
+
+-   **Plot explanation:** Sleep Duration is an important variable in this analysis. Hence, I wexplore it in this histogram. The histogram shows how sleep duration is distributed in the dataset. The highest bars indicate the most common sleep durations, and the overall spread gives an idea of typical variation. This plot is mainly used to check whether values look reasonable after cleaning. Most participants fall between 6–9 hours of sleep which is fairly a healthy amount of sleep. The distribution is irregular with some clusters.
+
+```{r}
+#| label: hist sleep
+#| fig-cap: "Distribution of sleep duration in the cleaned dataset."
+
+hist(
+  sleep_kaggle_data$sleep_duration,
+  breaks = 10,
+  col = "maroon",
+  border = "white",
+  main = "Sleep Duration Distribution",
+  xlab = "Hours of Sleep"
+)
+```
+
+## Research question 1: Sleep duration and stress
+**Is sleep duration associated with stress levels?**
+
+The first question is adressed, with a plot that shows the relationship between stress and sleep duration. 
+
+**Plot explanation:** Each point represents one participant and because many people share similar values, transparency is used so overlapping areas look darker. The regression line summarizes the overall direction of the relationship. A downward slope matches a negative correlation, meaning higher sleep duration is associated with lower stress in this dataset.
+
+```{r}
+#| label: plot sleep and stress
+#| fig-cap: "Sleep duration vs. stress level with a fitted regression line."
+
+pt_col <- adjustcolor("red", alpha.f = 0.35)
+
+plot(
+  clean_sleep_data$sleep_duration,
+  clean_sleep_data$stress_level,
+  pch = 16,
+  cex = 0.7,
+  col = pt_col,
+  xlab = "Sleep Duration (hours)",
+  ylab = "Stress level (1–10)",
+  main = "Longer Sleep Relates to Lower Stress"
+)
+
+abline(lm(stress_level ~ sleep_duration, data = clean_sleep_data), col = "blue", lwd = 2)
+
+```
+
+```{r}
+#| label: correlation sleep and stress
+
+cor_sleep_stress <- cor.test(
+  clean_sleep_data$sleep_duration,
+  clean_sleep_data$stress_level
+)
+```
+
+A Pearson correlation test shows a strong negative association between sleep duration and stress level:
+
+r = `r round(unname(cor_sleep_stress$estimate), 3)`
+
+This suggests that higher reported sleep duration is associated with lower reported stress levels in this dataset and lower reported sleep duration is associated with higher stress levels.
+
+
+## Research question 2: Age, sleep, and stress 
+**Is age related to sleep duration or stress levels?**
+
+Age is explored as a factor that might relate to both sleep and stress. The relationship between them would be interesting to see and to know for further data analaysis and studies. 
+
+### Correlation results
+
+**Plot explanation:** These plots show whether age is linked to sleep duration and stress. The regression lines help summarize the link between them, while transparency makes it easier to see where many points overlap. The plots check the pattern between these variables. Although there is not a strong relationship, it is a trend that older participants have a higher sleeping duration than younger ones. the second plot shows that older particpants reported lower levels of stress. While younger particpants reported higher levels of stress. This could also be related to sleep duration and stress question as the less sleep a particpant reported the higher levels of stress they reported. 
+
+```{r}
+#| label: plot age
+#| fig-cap: "Age vs sleep duration and age vs stress level, with fitted regression lines."
+#| fig-show: hold
+
+plot(
+  clean_sleep_data$age,
+  clean_sleep_data$sleep_duration,
+  pch = 16,
+  cex = 0.7,
+  col = pt_col,
+  xlab = "Age (years)",
+  ylab = "Sleep duration (hours)",
+  main = "Age Has a Positive Link With Sleep Duration"
+)
+
+abline(lm(sleep_duration ~ age, data = clean_sleep_data), col= "blue", lwd = 2)
+ 
+plot(
+  clean_sleep_data$age,
+  clean_sleep_data$stress_level,
+  pch = 16,
+  cex = 0.7,
+  col = pt_col,
+  xlab = "Age (years)",
+  ylab = "Stress level (1–10)",
+  main = "Older Participants Report Lower Stress"
+)
+
+abline(lm(stress_level ~ age, data = clean_sleep_data), col= "blue", lwd = 2)
+
+```
+
+```{r}
+#| label: correlation tests
+cor_age_sleep <- cor.test(
+  clean_sleep_data$age,
+  clean_sleep_data$sleep_duration
+)
+
+cor_age_stress <- cor.test(
+  clean_sleep_data$age,
+  clean_sleep_data$stress_level
+)
+```
+
+-   Age vs sleep duration: 
+`r round(unname(cor_age_sleep$estimate), 3)`
+
+-   Age vs stress level: 
+`r round(unname(cor_age_stress$estimate), 3)`
+
+In this dataset, the correlation results although not so strong showed that older age is associated with slightly longer sleep duration and lower stress levels.
+
+## Sleep disorders, sleep duration and stress levels
+**Do individuals with sleep disorders report higher stress?**
+
+**Do individuals with sleep disorders report less sleeping hours?**
+
+For this analysis, I created a binary grouped variable by combining all non ‘None’ disorders into one category and all the reported sleep disorders into one group (like sleep apnea and insomnia). This is mainly done for a simpler comparison because the subcategories have small counts, and it is better to have a clearer two-group visualization. As a result the groups have these counts:
+
+
+```{r}
+#| label: disorder grouping
+clean_sleep_data$sleep_disorder[is.na(clean_sleep_data$sleep_disorder) | clean_sleep_data$sleep_disorder == ""] <- "None"
+clean_sleep_data$sleep_disorder_bin <- factor(
+  ifelse(clean_sleep_data$sleep_disorder == "None", "None", "Sleep Disorder"),
+  levels = c("None", "Sleep Disorder")
+)
+
+#Group sizes
+table(clean_sleep_data$sleep_disorder_bin)
+
+```
+
+### T-test result and group means
+
+**Plot explanation:** The first boxplot "Participants Reporting a Sleep Disorder Tend to Report Higher Stress" compares average stress between the two groups. In the figure, the Sleep Disorder group’s median stress is higher than the None group. All of the box for Sleep Disorder is higher, meaning the usual stress levels are higher, not just a few outliers. There is an overlap where people with no disorder have high stress, and others with a disorder have lower stress but overall the disorder group box is shifted upward.
+
+The second boxplot "Participants Reporting a Sleep Disorder Tend to Report Shorter Sleep" compares average sleep duration between the two groups. In the figure, the Sleep Disorder group’s median sleep duration is lower than the None group. The sleep disorder group is concentrated more around ~6–7 hours, while the “None” group is more around ~7–8 hours. Again, there is overlap, but the disorder group is shifted downward overall.
+
+These plots suggest a relationship, sleep disorders are linked with both higher stress and shorter sleep in this dataset, but this doesn't prove that the disorder causes those outcomes.
+
+```{r}
+#| label: plot-disorders
+#| fig-cap: "Sleep disorders vs stress levels and sleep disorders vs sleep duration"
+#| fig-show: hold
+
+
+library(ggplot2)
+# Stress by sleep disorder plot
+ggplot(clean_sleep_data, aes(x = sleep_disorder_bin, y = stress_level)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.35) +
+  labs(title = "Participants Reporting a Sleep Disorder Tend to Report Higher Stress", y = "Stress Level", x = "")
+
+ggplot(clean_sleep_data, aes(x = sleep_disorder_bin, y = sleep_duration)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.35) +
+  labs(title = "Participants Reporting a Sleep Disorder Tend to Report Shorter Sleep",
+       y = "Sleep Duration (Hours)", x = "")
+```
+
+
+```{r}
+#| label: ttest
+#Mean and SD
+mean_dis_none <- tapply(
+  clean_sleep_data$stress_level,
+  clean_sleep_data$sleep_disorder_bin,
+  mean,
+  na.rm = TRUE
+)
+
+sd_dis_none <- tapply(
+  clean_sleep_data$stress_level,
+  clean_sleep_data$sleep_disorder_bin,
+  sd,
+  na.rm = TRUE
+)
+
+mean_sleep_dis <- tapply(
+  clean_sleep_data$sleep_duration,
+  clean_sleep_data$sleep_disorder_bin,
+  mean,
+  na.rm = TRUE
+)
+
+sd_sleep_dis <- tapply(
+  clean_sleep_data$sleep_duration,
+  clean_sleep_data$sleep_disorder_bin,
+  sd,
+  na.rm = TRUE
+)
+
+#T-test: stress level by sleep disorder + sleep duration by sleep disorder
+stress_none <- clean_sleep_data$stress_level[clean_sleep_data$sleep_disorder_bin == "None"]
+stress_dis  <- clean_sleep_data$stress_level[clean_sleep_data$sleep_disorder_bin == "Sleep Disorder"]
+sleep_none <- clean_sleep_data$sleep_duration[clean_sleep_data$sleep_disorder_bin == "None"]
+sleep_dis  <- clean_sleep_data$sleep_duration[clean_sleep_data$sleep_disorder_bin == "Sleep Disorder"]
+
+#T-test: disorder group has higher stress 
+t_stress <- t.test(stress_dis, stress_none, alternative = "greater")
+#T-test: disorder group has less sleep
+t_sleep <- t.test(sleep_dis, sleep_none, alternative = "less")
+
+```
+
+A directional Welch two-sample t-test was used because my hypothesis is that sleep disorder group reports higher stress and shorter sleep duration. 
+
+Sleep disorder and None sleep disorder groups' mean and SD summary: 
+
+```{r}
+#| label: summary_table
+n_group <- table(clean_sleep_data$sleep_disorder_bin)
+summary_table <- data.frame(
+  Group = names(mean_dis_none),
+  N = as.numeric(n_group[names(mean_dis_none)]),
+  Stress_Mean = round(as.numeric(mean_dis_none), 2),
+  Stress_SD   = round(as.numeric(sd_dis_none), 2),
+  Sleep_Mean  = round(as.numeric(mean_sleep_dis), 2),
+  Sleep_SD    = round(as.numeric(sd_sleep_dis), 2)
+)
+summary_table
+```
+
+
+The stress t-test supports the hypothesis indicating higher stress is reported in the sleep disorder group (p = `r sprintf("%.4f", t_stress$p.value)`). 
+The sleep duration t-test supports the hypothesis indicating shorter sleep duration is reported in the sleep disorder group (p = `r format.pval(t_sleep$p.value, digits = 3)`).
+
+### Summary and Conclusion
+
+In this analysis, the visualizations and tests tell a consistent story. Longer sleep duration is associated with lower stress, and age is related to both as older participants tend to report slightly longer sleep and lower stress. In addition, participants that reported a sleep disorder show on average higher stress level and shorter sleep duration. In conclusion, these results suggest that sleep duration and stress levels are linked in this dataset. The reported results describe associations rather than cause and effect relationship. However, the patterns are clear and may drive more analysis with additional variables or longitudinal data.
+
+### Limitations
+
+This analysis is based on cross-sectional, observational data, so it cannot conclude causality (we can't conclude that sleeping less causes higher stress). The measures are self-reported, which may result in measurement error or reporting bias. The sample size (N = 374) is relatively small, and the dataset may not represent a broad population; subgroup analyses (such as specific disorder types) may have limited precision. When divding the groups by specific disorder type (Insomnia vs Sleep Apnea), they become smaller, which makes analysis less stable and confidence intervals wider.
+
+
+**Code Repository:**https://github.com/aishaalomar01-coder/Stress_Sleep_Project.git
